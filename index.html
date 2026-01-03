@@ -18,7 +18,6 @@
     <meta name="twitter:title" content="HAYAME 2.0 - Coming Soon">
     <meta name="twitter:description" content="A new era for how Ghana moves is coming. Join the waitlist for the next chapter of peer-to-peer car sharing.">
     <meta name="twitter:image" content="https://www.hayamegh.com/public/IMG_2493.png?v=2">
-    <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.0/dist/umd/supabase.js"></script>
     <style>
         /* --- RESET & BASE STYLES --- */
         * {
@@ -545,12 +544,7 @@
         document.getElementById('minutes').textContent = formatNumber(timeLeft.minutes);
         document.getElementById('seconds').textContent = formatNumber(timeLeft.seconds);
 
-        // --- 2. Supabase Client ---
-        const supabaseUrl = 'https://osvjxsbsuixfsgadzxzo.supabase.co';
-        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9zdmp4c2JzdWl4ZnNnYWR6eHpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY3ODEwMjAsImV4cCI6MjA4MjM1NzAyMH0.C-S46gCdGSD4Bm7JZoACyMmb9hh3Mk7joGdTtEh50kc';
-        const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
-
-        // --- 3. Form Submission Logic ---
+        // --- 2. Form Submission Logic ---
         const form = document.getElementById('subscribeForm');
         const emailInput = document.getElementById('emailInput');
         const successMessage = document.getElementById('successMessage');
@@ -574,11 +568,6 @@
             }, 5000);
         }
 
-        async function saveEmail(email) {
-            // Inserts into a Supabase table named "emails" with a column "email"
-            return supabaseClient.from('emails').insert({ email });
-        }
-
         form.addEventListener('submit', async function(e) {
             e.preventDefault();
             const email = emailInput.value.trim();
@@ -589,15 +578,27 @@
             errorMessage.style.display = 'none';
             successMessage.style.display = 'none';
 
-            const { error } = await saveEmail(email);
-
-            if (error) {
-                console.error('Supabase error:', error);
+            let failed = false;
+            try {
+                const resp = await fetch('/api/save-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                const data = await resp.json().catch(() => ({}));
+                if (!resp.ok || data.error) {
+                    failed = true;
+                    console.error('Save error:', data.error || resp.statusText);
+                    showError('Could not save your email. Please try again.');
+                } else {
+                    console.log(`Saved ${email} to waitlist`);
+                    showSuccess();
+                    emailInput.value = '';
+                }
+            } catch (err) {
+                failed = true;
+                console.error('Save error:', err);
                 showError('Could not save your email. Please try again.');
-            } else {
-                console.log(`Saved ${email} to Supabase waitlist`);
-                showSuccess();
-                emailInput.value = '';
             }
 
             submitButton.disabled = false;
