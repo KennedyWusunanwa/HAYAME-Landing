@@ -18,6 +18,7 @@
     <meta name="twitter:title" content="HAYAME 2.0 - Coming Soon">
     <meta name="twitter:description" content="A new era for how Ghana moves is coming. Join the waitlist for the next chapter of peer-to-peer car sharing.">
     <meta name="twitter:image" content="https://www.hayamegh.com/public/IMG_2493.png?v=2">
+    <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.0/dist/umd/supabase.js"></script>
     <style>
         /* --- RESET & BASE STYLES --- */
         * {
@@ -381,6 +382,18 @@
             animation: fadeIn 0.5s ease-out;
         }
 
+        .error-message {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background-color: rgba(127, 29, 29, 0.5); /* Red-900 transparent */
+            border: 1px solid rgba(220, 38, 38, 0.5);
+            color: #fecdd3;
+            font-size: 0.875rem;
+            border-radius: 0.5rem;
+            display: none;
+            animation: fadeIn 0.5s ease-out;
+        }
+
         /* --- FOOTER --- */
         footer {
             margin-top: auto;
@@ -483,6 +496,9 @@
                     Thank you! We've received your email. <br>
                     <span style="font-size: 0.75rem; opacity: 0.8;">Updates will be sent from hayameofficial@gmail.com</span>
                 </div>
+                <div class="error-message" id="errorMessage">
+                    Something went wrong. Please try again.
+                </div>
             </div>
 
             <div class="watch-section">
@@ -513,9 +529,6 @@
     <!-- JavaScript Logic -->
     <script>
         // --- 1. Timer Logic (Paused/Static) ---
-        // Note: To make this count down, you would uncomment the setInterval logic similar to the React version.
-        // Currently sets static values.
-        
         const timeLeft = {
             days: 0,
             hours: 0,
@@ -527,38 +540,68 @@
             return num.toString().padStart(2, '0');
         }
 
-        // Update HTML with static values
         document.getElementById('days').textContent = formatNumber(timeLeft.days);
         document.getElementById('hours').textContent = formatNumber(timeLeft.hours);
         document.getElementById('minutes').textContent = formatNumber(timeLeft.minutes);
         document.getElementById('seconds').textContent = formatNumber(timeLeft.seconds);
 
+        // --- 2. Supabase Client ---
+        const supabaseUrl = 'https://osvjxsbsuixfsgadzxzo.supabase.co';
+        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9zdmp4c2JzdWl4ZnNnYWR6eHpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY3ODEwMjAsImV4cCI6MjA4MjM1NzAyMH0.C-S46gCdGSD4Bm7JZoACyMmb9hh3Mk7joGdTtEh50kc';
+        const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
 
-        // --- 2. Form Submission Logic ---
+        // --- 3. Form Submission Logic ---
         const form = document.getElementById('subscribeForm');
         const emailInput = document.getElementById('emailInput');
         const successMessage = document.getElementById('successMessage');
+        const errorMessage = document.getElementById('errorMessage');
+        const submitButton = form.querySelector('button');
 
-        form.addEventListener('submit', function(e) {
-            e.preventDefault(); // Stop page reload
-            
-            const email = emailInput.value;
-            
-            if (email) {
-                // Log to console as requested
-                console.log(`Subscribing ${email} - Notification to be sent to hayameofficial@gmail.com`);
-                
-                // Show success message
-                successMessage.style.display = 'block';
-                
-                // Hide success message after 5 seconds
-                setTimeout(() => {
-                    successMessage.style.display = 'none';
-                }, 5000);
+        function showSuccess() {
+            successMessage.style.display = 'block';
+            errorMessage.style.display = 'none';
+            setTimeout(() => {
+                successMessage.style.display = 'none';
+            }, 5000);
+        }
 
-                // Clear input
+        function showError(msg) {
+            errorMessage.textContent = msg || 'Something went wrong. Please try again.';
+            errorMessage.style.display = 'block';
+            successMessage.style.display = 'none';
+            setTimeout(() => {
+                errorMessage.style.display = 'none';
+            }, 5000);
+        }
+
+        async function saveEmail(email) {
+            // Inserts into a Supabase table named "emails" with a column "email"
+            return supabaseClient.from('emails').insert({ email });
+        }
+
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const email = emailInput.value.trim();
+            if (!email) return;
+
+            submitButton.disabled = true;
+            submitButton.textContent = 'Saving...';
+            errorMessage.style.display = 'none';
+            successMessage.style.display = 'none';
+
+            const { error } = await saveEmail(email);
+
+            if (error) {
+                console.error('Supabase error:', error);
+                showError('Could not save your email. Please try again.');
+            } else {
+                console.log(`Saved ${email} to Supabase waitlist`);
+                showSuccess();
                 emailInput.value = '';
             }
+
+            submitButton.disabled = false;
+            submitButton.textContent = 'NOTIFY ME';
         });
     </script>
 </body>
