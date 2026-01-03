@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HAYAME 2.0 - Coming Soon</title>
+    <style>
+        /* --- RESET & BASE STYLES --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #171717; /* Neutral-900 */
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* --- BACKGROUND LAYERS --- */
+        .bg-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .bg-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(23, 23, 23, 0.8); /* Dark overlay */
+            z-index: 2;
+        }
+
+        .bg-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            /* Tries to load local image, falls back to URL if missing */
+            background-image: url('./public/hayame bg.png'); 
+            background-size: cover;
+            background-position: center;
+            opacity: 0.5;
+            z-index: 1;
+        }
+
+        /* Fallback pattern if local image fails (simulated via CSS) */
+        .bg-fallback {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2070&auto=format&fit=crop');
+            background-size: cover;
+            opacity: 0.2;
+            mix-blend-mode: overlay;
+            z-index: 0;
+        }
+
+        .bg-glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 600px;
+            background-color: #000;
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: 0.6;
+            z-index: 2;
+        }
+
+        /* --- LAYOUT CONTAINER --- */
+        .container {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 3rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            text-align: center;
+        }
+
+        /* --- HEADER / LOGO --- */
+        header {
+            margin-bottom: 3rem;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        .logo-container {
+            width: 140px;
+            height: 140px;
+            margin: 0 auto 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.2));
+        }
+
+        .logo-fallback {
+            display: none; /* Hidden by default */
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 10px;
+            border-radius: 50%;
+        }
+
+        /* --- TYPOGRAPHY --- */
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: -0.02em;
+        }
+
+        .gradient-text {
+            background: linear-gradient(to right, #ffffff, #e5e5e5, #a3a3a3);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            display: block;
+        }
+        
+        .white-text {
+            color: white;
+            display: block;
+            margin-top: 0.5rem;
+        }
+
+        .subheadline {
+            font-size: 1.125rem;
+            color: #d4d4d4; /* Neutral-300 */
+            margin-bottom: 3rem;
+            font-weight: 300;
+            max-width: 42rem;
+            line-height: 1.6;
+        }
+
+        /* Media Queries for Typography */
+        @media (min-width: 768px) {
+            h1 { font-size: 3.75rem; }
+            .subheadline { font-size: 1.25rem; }
+        }
+        @media (min-width: 1024px) {
+            h1 { font-size: 4.5rem; }
+        }
+
+        /* --- COUNTDOWN TIMER --- */
+        .timer-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 4rem;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .timer-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .timer-number {
+            font-family: monospace;
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
+
+        .timer-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #f59e0b; /* Amber-500 */
+            margin-top: 0.5rem;
+            font-weight: 500;
+        }
+
+        .timer-separator {
+            display: none;
+            position: absolute;
+            right: -10px;
+            top: 20%;
+            font-size: 2rem;
+            color: #525252;
+            font-weight: 300;
+        }
+
+        @media (min-width: 768px) {
+            .timer-grid { gap: 2rem; }
+            .timer-number { font-size: 3.5rem; }
+            .timer-label { font-size: 0.875rem; }
+            .timer-separator { display: block; right: -1rem; }
+        }
+
+        /* --- EMAIL FORM --- */
+        .form-container {
+            width: 100%;
+            max-width: 28rem;
+            margin: 0 auto;
+        }
+
+        .watch-section {
+            margin-top: 3rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .watch-text {
+            font-size: 1rem;
+            color: #e5e5e5;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .social-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 42px;
+            height: 42px;
+            border-radius: 9999px;
+            background-color: rgba(255, 255, 255, 0.08);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            transition: transform 0.1s ease, background-color 0.2s ease, border-color 0.2s ease;
+        }
+
+        .social-link:hover {
+            transform: translateY(-2px);
+            background-color: rgba(217, 119, 6, 0.18);
+            border-color: rgba(217, 119, 6, 0.4);
+        }
+
+        .social-link svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .input-group {
+            position: relative;
+            flex-grow: 1;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #737373;
+            pointer-events: none;
+        }
+
+        input[type="email"] {
+            width: 100%;
+            padding: 1rem 1rem 1rem 2.5rem;
+            border-radius: 0.5rem;
+            border: none;
+            font-size: 1rem;
+            color: #171717;
+            background-color: white;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            outline: none;
+            transition: box-shadow 0.2s;
+        }
+
+        input[type="email"]:focus {
+            box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.5); /* Amber ring */
+        }
+
+        button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem 2rem;
+            background: linear-gradient(to right, #b45309, #d97706); /* Amber gradient */
+            color: white;
+            font-weight: 700;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 1rem;
+            white-space: nowrap;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+
+        button:hover {
+            background: linear-gradient(to right, #d97706, #f59e0b);
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgba(180, 83, 9, 0.2);
+        }
+
+        button svg {
+            margin-left: 0.5rem;
+        }
+
+        @media (min-width: 640px) {
+            form { flex-direction: row; }
+        }
+
+        /* --- MESSAGES --- */
+        .success-message {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background-color: rgba(20, 83, 45, 0.5); /* Green-900 transparent */
+            border: 1px solid rgba(21, 128, 61, 0.5);
+            color: #bbf7d0;
+            font-size: 0.875rem;
+            border-radius: 0.5rem;
+            display: none; /* Hidden by default */
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        /* --- FOOTER --- */
+        footer {
+            margin-top: auto;
+            padding-top: 4rem;
+            opacity: 0.6;
+        }
+
+        footer p {
+            font-size: 0.75rem;
+            color: #a3a3a3;
+            letter-spacing: 0.025em;
+        }
+
+        @media (min-width: 768px) {
+            footer p { font-size: 0.875rem; }
+        }
+
+        /* --- ANIMATIONS --- */
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Background Layers -->
+    <div class="bg-container">
+        <div class="bg-overlay"></div>
+        <div class="bg-fallback"></div>
+        <!-- This div will hold the image if it exists -->
+        <div class="bg-image"></div>
+        <div class="bg-glow"></div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        
+        <header>
+            <div class="logo-container">
+                <img src="./public/hayame logo.png" alt="Hayame Logo" class="logo-img" onerror="this.style.display='none'; document.querySelector('.logo-fallback').style.display='block';">
+                <div class="logo-fallback">LOGO</div>
+            </div>
+        </header>
+
+        <main>
+            <h1>
+                <span class="gradient-text">HAYAME 2.0</span>
+                <span class="white-text">IS COMING</span>
+            </h1>
+
+            <p class="subheadline">
+                The anticipation builds. A new era for how Ghana moves.
+            </p>
+
+            <!-- Countdown Timer -->
+            <div class="timer-grid" id="timer">
+                <div class="timer-item">
+                    <span class="timer-number" id="days">30</span>
+                    <span class="timer-separator">:</span>
+                    <span class="timer-label">Days</span>
+                </div>
+                <div class="timer-item">
+                    <span class="timer-number" id="hours">00</span>
+                    <span class="timer-separator">:</span>
+                    <span class="timer-label">Hours</span>
+                </div>
+                <div class="timer-item">
+                    <span class="timer-number" id="minutes">00</span>
+                    <span class="timer-separator">:</span>
+                    <span class="timer-label">Minutes</span>
+                </div>
+                <div class="timer-item">
+                    <span class="timer-number" id="seconds">00</span>
+                    <span class="timer-label">Seconds</span>
+                </div>
+            </div>
+
+            <!-- Email Form -->
+            <div class="form-container">
+                <form id="subscribeForm">
+                    <div class="input-group">
+                        <!-- Inline SVG for Mail Icon -->
+                        <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                        <input type="email" id="emailInput" placeholder="Enter your email for updates" required>
+                    </div>
+                    <button type="submit">
+                        NOTIFY ME
+                        <!-- Inline SVG for Chevron Right -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                    </button>
+                </form>
+
+                <div class="success-message" id="successMessage">
+                    Thank you! We've received your email. <br>
+                    <span style="font-size: 0.75rem; opacity: 0.8;">Updates will be sent from hayameofficial@gmail.com</span>
+                </div>
+            </div>
+
+            <div class="watch-section">
+                <p class="watch-text">Watch this space</p>
+                <div class="social-links">
+                    <a class="social-link" href="https://www.instagram.com/hayameofficial" target="_blank" rel="noopener">
+                        <span class="sr-only">Instagram</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.6"><rect x="4" y="4" width="16" height="16" rx="4" ry="4"/><circle cx="12" cy="12" r="3.2"/><circle cx="16.8" cy="7.2" r="0.8"/></svg>
+                    </a>
+                    <a class="social-link" href="https://gh.linkedin.com/company/hayameafrica" target="_blank" rel="noopener">
+                        <span class="sr-only">LinkedIn</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24"><path d="M20.45 20.45h-3.56v-5.33c0-1.27-.02-2.9-1.77-2.9-1.78 0-2.05 1.38-2.05 2.81v5.42H9.5V9h3.42v1.56h.05c.48-.9 1.66-1.85 3.42-1.85 3.66 0 4.34 2.41 4.34 5.54v6.2ZM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12Zm1.78 13.02H3.56V9h3.56v11.45Z"/></svg>
+                    </a>
+                    <a class="social-link" href="https://www.facebook.com/hayameofficial" target="_blank" rel="noopener">
+                        <span class="sr-only">Facebook</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24"><path d="M13.4 20.45v-6.7h2.25l.34-2.62H13.4v-1.67c0-.76.21-1.28 1.3-1.28h1.39V5.85c-.24-.03-1.06-.1-2.01-.1-1.99 0-3.35 1.22-3.35 3.46v1.93H7.5v2.62h2.23v6.7h3.67Z"/></svg>
+                    </a>
+                </div>
+            </div>
+
+        </main>
+
+        <footer>
+            <p>&copy; 2026 Hayame. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // --- 1. Timer Logic (Paused/Static) ---
+        // Note: To make this count down, you would uncomment the setInterval logic similar to the React version.
+        // Currently sets static values.
+        
+        const timeLeft = {
+            days: 0,
+            hours: 0,
+            minutes: 0,
+            seconds: 0
+        };
+
+        function formatNumber(num) {
+            return num.toString().padStart(2, '0');
+        }
+
+        // Update HTML with static values
+        document.getElementById('days').textContent = formatNumber(timeLeft.days);
+        document.getElementById('hours').textContent = formatNumber(timeLeft.hours);
+        document.getElementById('minutes').textContent = formatNumber(timeLeft.minutes);
+        document.getElementById('seconds').textContent = formatNumber(timeLeft.seconds);
+
+
+        // --- 2. Form Submission Logic ---
+        const form = document.getElementById('subscribeForm');
+        const emailInput = document.getElementById('emailInput');
+        const successMessage = document.getElementById('successMessage');
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault(); // Stop page reload
+            
+            const email = emailInput.value;
+            
+            if (email) {
+                // Log to console as requested
+                console.log(`Subscribing ${email} - Notification to be sent to hayameofficial@gmail.com`);
+                
+                // Show success message
+                successMessage.style.display = 'block';
+                
+                // Hide success message after 5 seconds
+                setTimeout(() => {
+                    successMessage.style.display = 'none';
+                }, 5000);
+
+                // Clear input
+                emailInput.value = '';
+            }
+        });
+    </script>
+</body>
+</html>
